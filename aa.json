@@ -1,0 +1,12 @@
+{
+  "global_status": "safe",
+  "global_version": "3.5.0",
+  "korea_status": "safe",
+  "korea_version": "3.4.1",
+  "taiwan_status": "maintenance",
+  "taiwan_version": "3.3.0",
+  "vietnam_status": "unsafe",
+  "vietnam_version": "3.2.5",
+  "bgmi_status": "safe",
+  "bgmi_version": "3.6.0"
+}
