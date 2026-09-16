@@ -3,7 +3,7 @@
 @set_time_limit(120);
 
 $botToken = "8880729702:AAGvAiQOhvoti3FRf23oXNUpEhnOhV_8uFQ";
-$chatId   = "8017461690";
+$chatId   = "@HackBurkan1";
 
 header('Content-Type: application/json; charset=utf-8');
 
