@@ -150,19 +150,6 @@ if ($action === 'api_extend' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     } else { header('Content-Type: application/json'); echo json_encode(['success' => false]); }
     exit;
 }
-if ($action === 'api_edit_features' && $_SERVER['REQUEST_METHOD'] === 'POST') {
-    $key = $_POST['key'] ?? '';
-    $features = $_POST['features'] ?? [];
-    if (!is_array($features)) { $features = []; }
-    $keys = load_keys();
-    if (isset($keys[$key])) {
-        $keys[$key]['features'] = $features;
-        save_keys($keys);
-        header('Content-Type: application/json');
-        echo json_encode(['success' => true, 'features' => $features]);
-    } else { header('Content-Type: application/json'); echo json_encode(['success' => false]); }
-    exit;
-}
 if ($action === 'api_check') {
     $key = $_GET['key'] ?? $_POST['key'] ?? '';
     $hwid = $_GET['hwid'] ?? $_POST['hwid'] ?? '';
@@ -246,7 +233,6 @@ tr:hover{background:rgba(123,47,247,0.05)}
 .btn-ban{background:rgba(255,50,50,0.3);color:#ff6b6b}
 .btn-reset{background:rgba(0,212,255,0.3);color:#7de8ff}
 .btn-extend{background:rgba(50,255,100,0.2);color:#5fff8f}
-.btn-edit{background:rgba(255,180,50,0.3);color:#ffc850}
 .btn-del{background:rgba(150,0,0,0.3);color:#ff9090}
 .actions button:hover{transform:scale(1.05)}
 .result{background:rgba(50,255,100,0.1);border:1px solid rgba(50,255,100,0.3);padding:20px;border-radius:10px;margin-top:20px;display:none}
@@ -254,15 +240,6 @@ tr:hover{background:rgba(123,47,247,0.05)}
 .key-list{background:rgba(0,0,0,0.3);padding:15px;border-radius:8px;font-family:monospace;font-size:13px;max-height:300px;overflow-y:auto;direction:ltr;text-align:left}
 .key-list div{padding:5px 0;color:#7de8ff;border-bottom:1px solid rgba(255,255,255,0.05)}
 .copy-all{margin-top:15px;background:rgba(123,47,247,0.2);color:#c39bff;padding:10px 20px;border:1px solid rgba(123,47,247,0.4);border-radius:8px;cursor:pointer;font-size:13px}
-.modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:9999;align-items:center;justify-content:center;padding:20px}
-.modal.active{display:flex}
-.modal-box{background:#1a1a2e;border:1px solid rgba(123,47,247,0.5);border-radius:15px;padding:30px;max-width:900px;width:100%;max-height:90vh;overflow-y:auto}
-.modal-box h2{color:#00d4ff;margin-bottom:20px;font-size:20px}
-.modal-close{float:left;background:rgba(255,50,50,0.3);border:none;color:#ff6b6b;padding:8px 15px;border-radius:8px;cursor:pointer;font-size:13px}
-.modal-actions{margin-top:20px;display:flex;gap:10px;justify-content:flex-end}
-.modal-btn{padding:12px 25px;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:bold}
-.modal-save{background:linear-gradient(90deg,#5fff8f,#00d4ff);color:#000}
-.modal-cancel{background:rgba(255,255,255,0.1);color:#fff}
 </style>
 </head>
 <body>
@@ -351,8 +328,6 @@ tr:hover{background:rgba(123,47,247,0.05)}
     $statusClass = $isBanned ? 'banned' : ($isExpired ? 'expired' : 'active');
     $statusText = $isBanned ? 'محظور' : ($isExpired ? 'منتهي' : 'نشط');
     $typeClass = strtolower($k['type'] ?? 'vip');
-    $featCount = is_array($k['features'] ?? null) ? count($k['features']) : 0;
-    $featJson = htmlspecialchars(json_encode($k['features'] ?? [], JSON_UNESCAPED_UNICODE), ENT_QUOTES);
 ?>
 <tr>
 <td style="font-family:monospace;color:#7de8ff"><?= htmlspecialchars($k['key']) ?></td>
@@ -360,11 +335,10 @@ tr:hover{background:rgba(123,47,247,0.05)}
 <td><?= (int)($k['days'] ?? 30) ?> يوم</td>
 <td style="font-size:12px"><?= htmlspecialchars($k['expires_at']) ?></td>
 <td style="font-family:monospace;font-size:11px;color:#aaa;max-width:150px;overflow:hidden;text-overflow:ellipsis"><?= htmlspecialchars($k['hwid'] ?? '—') ?></td>
-<td><span class="badge <?= $statusClass ?>"><?= $statusText ?></span> <span class="badge free"><?= $featCount ?> feat</span></td>
+<td><span class="badge <?= $statusClass ?>"><?= $statusText ?></span></td>
 <td class="actions">
-<button class="btn-edit" onclick='openFeatureModal(<?= json_encode($k['key']) ?>, <?= $featJson ?>)'>مميزات</button>
-<button class="btn-ban" onclick="toggleBan('<?= htmlspecialchars($k['key']) ?>')"><?= $isBanned ? 'إلغاء' : 'حظر' ?></button>
-<button class="btn-reset" onclick="resetHwid('<?= htmlspecialchars($k['key']) ?>')">HWID</button>
+<button class="btn-ban" onclick="toggleBan('<?= htmlspecialchars($k['key']) ?>')"><?= $isBanned ? 'إلغاء حظر' : 'حظر' ?></button>
+<button class="btn-reset" onclick="resetHwid('<?= htmlspecialchars($k['key']) ?>')">تصفير HWID</button>
 <button class="btn-extend" onclick="extendKey('<?= htmlspecialchars($k['key']) ?>')">تمديد</button>
 <button class="btn-del" onclick="deleteKey('<?= htmlspecialchars($k['key']) ?>')">حذف</button>
 </td>
@@ -372,54 +346,6 @@ tr:hover{background:rgba(123,47,247,0.05)}
 <?php endforeach; ?>
 </tbody>
 </table>
-</div>
-</div>
-<div class="modal" id="featureModal">
-<div class="modal-box">
-<button class="modal-close" onclick="closeFeatureModal()">✕ إغلاق</button>
-<h2>🎯 تعديل مميزات المفتاح</h2>
-<p style="color:#b8b8d0;font-size:13px;margin-bottom:15px">المفتاح: <span id="featKeyName" style="color:#7de8ff;font-family:monospace"></span></p>
-<div class="features-grid" id="featGrid">
-<label class="feat"><input type="checkbox" value="esp"><span>ESP</span></label>
-<label class="feat"><input type="checkbox" value="wallhack"><span>Wallhack</span></label>
-<label class="feat"><input type="checkbox" value="aimbot"><span>Aimbot</span></label>
-<label class="feat"><input type="checkbox" value="aimtouch"><span>Aim Touch</span></label>
-<label class="feat"><input type="checkbox" value="magic_bullet"><span>Magic Bullet</span></label>
-<label class="feat"><input type="checkbox" value="auto_head"><span>Auto Head</span></label>
-<label class="feat"><input type="checkbox" value="radar"><span>Radar 360</span></label>
-<label class="feat"><input type="checkbox" value="skeleton"><span>Skeleton</span></label>
-<label class="feat"><input type="checkbox" value="item_esp"><span>Item ESP</span></label>
-<label class="feat"><input type="checkbox" value="vehicle_esp"><span>Vehicle ESP</span></label>
-<label class="feat"><input type="checkbox" value="bomb_esp"><span>Bomb ESP</span></label>
-<label class="feat"><input type="checkbox" value="aim_warning"><span>Aim Warning</span></label>
-<label class="feat"><input type="checkbox" value="ipad_view"><span>iPad View</span></label>
-<label class="feat"><input type="checkbox" value="unlock_fps"><span>Unlock FPS</span></label>
-<label class="feat"><input type="checkbox" value="no_grass"><span>No Grass</span></label>
-<label class="feat"><input type="checkbox" value="no_trees"><span>No Trees</span></label>
-<label class="feat"><input type="checkbox" value="no_fog"><span>No Fog</span></label>
-<label class="feat"><input type="checkbox" value="black_sky"><span>Black Sky</span></label>
-<label class="feat"><input type="checkbox" value="mod_skin"><span>Mod Skin</span></label>
-<label class="feat"><input type="checkbox" value="mod_emote"><span>Mod Emote</span></label>
-<label class="feat"><input type="checkbox" value="skin_deadbox"><span>Skin Deadbox</span></label>
-<label class="feat"><input type="checkbox" value="kill_message"><span>Kill Message</span></label>
-<label class="feat"><input type="checkbox" value="kill_counter"><span>Kill Counter</span></label>
-<label class="feat"><input type="checkbox" value="fast_car"><span>Fast Car</span></label>
-<label class="feat"><input type="checkbox" value="wall_climb"><span>Wall Climb</span></label>
-<label class="feat"><input type="checkbox" value="fake_hwid"><span>Fake HWID</span></label>
-<label class="feat"><input type="checkbox" value="no_recoil"><span>No Recoil</span></label>
-<label class="feat"><input type="checkbox" value="accurate"><span>100% Accuracy</span></label>
-<label class="feat"><input type="checkbox" value="weapon_glow"><span>Weapon Glow</span></label>
-<label class="feat"><input type="checkbox" value="antenna"><span>Antenna ESP</span></label>
-<label class="feat"><input type="checkbox" value="esp_outline"><span>ESP Outline</span></label>
-<label class="feat"><input type="checkbox" value="white_body"><span>White Body</span></label>
-<label class="feat"><input type="checkbox" value="color_body"><span>Color Body</span></label>
-<label class="feat"><input type="checkbox" value="bugman"><span>Bug Man</span></label>
-<label class="feat"><input type="checkbox" value="auto_report"><span>Auto Report</span></label>
-</div>
-<div class="modal-actions">
-<button class="modal-cancel" onclick="closeFeatureModal()">إلغاء</button>
-<button class="modal-save" onclick="saveFeatures()">💾 حفظ</button>
-</div>
 </div>
 </div>
 <script>
@@ -468,36 +394,6 @@ async function deleteKey(key) {
     const data = await res.json();
     if (data.success) location.reload();
 }
-let currentEditKey = null;
-function openFeatureModal(key, features) {
-    currentEditKey = key;
-    document.getElementById('featKeyName').textContent = key;
-    const checkboxes = document.querySelectorAll('#featGrid input[type=checkbox]');
-    checkboxes.forEach(cb => { cb.checked = features.includes(cb.value); });
-    document.getElementById('featureModal').classList.add('active');
-}
-function closeFeatureModal() {
-    document.getElementById('featureModal').classList.remove('active');
-    currentEditKey = null;
-}
-async function saveFeatures() {
-    if (!currentEditKey) return;
-    const fd = new FormData();
-    fd.append('key', currentEditKey);
-    const checkboxes = document.querySelectorAll('#featGrid input[type=checkbox]:checked');
-    checkboxes.forEach(cb => fd.append('features[]', cb.value));
-    const res = await fetch('?action=api_edit_features', { method:'POST', body:fd });
-    const data = await res.json();
-    if (data.success) {
-        alert('✅ تم حفظ المميزات');
-        location.reload();
-    } else {
-        alert('❌ حدث خطأ');
-    }
-}
-document.getElementById('featureModal').addEventListener('click', function(e) {
-    if (e.target === this) closeFeatureModal();
-});
 </script>
 </body>
 </html>
