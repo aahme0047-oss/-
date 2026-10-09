@@ -2,7 +2,7 @@
 @ini_set('memory_limit', '256M');
 @set_time_limit(120);
 
-$botToken = "7124819081:AAFDg6NF2--wHS3hcudOfrLe29iCqQJdulM";
+$botToken = "6683430317:AAEJ0Ck1M1O93XI9CeGbfRfxWfB9aQHtUxg";
 $chatId   = "@FTSMOD1";
 
 header('Content-Type: application/json; charset=utf-8');
