@@ -6,7 +6,7 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.request import HTTPXRequest
 from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, filters, ContextTypes
 
-TOKEN = os.environ.get("BOT_TOKEN", "8880729702:AAGvAiQOhvoti3FRf23oXNUpEhnOhV_8uFQ")
+TOKEN = os.environ.get("BOT_TOKEN", "9210797191:AAH70wcGejlAFyrFV7FGkslbMMFMu_b7qt0")
 DOWNLOAD_DIR = "downloads"
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 
